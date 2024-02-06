@@ -1,0 +1,67 @@
+apply plugin: 'hyperskill'
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+}
+
+subprojects {
+    apply plugin: 'application'
+    apply plugin: 'scala'
+    apply plugin: 'java'
+
+    repositories {
+        mavenCentral()
+        maven { url 'https://packages.jetbrains.team/maven/p/hyperskill-hs-test/maven' }
+        maven { url "https://jitpack.io" }
+    }
+
+    dependencies {
+        implementation 'org.scala-lang:scala3-library_3:3.3.0'
+        testImplementation 'com.github.hyperskill:hs-test:release-SNAPSHOT'
+    }
+
+    configurations.all {
+        resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+    }
+
+    sourceSets {
+        main.java.srcDir 'src'
+        main.scala.srcDir 'src'
+        test.java.srcDir 'test'
+        test.scala.srcDir 'test'
+    }
+
+    test {
+        systemProperty "file.encoding", "utf-8"
+        outputs.upToDateWhen { false }
+    }
+
+    compileJava.options.encoding = 'utf-8'
+    tasks.withType(JavaCompile) {
+        options.encoding = 'utf-8'
+        sourceCompatibility = hs.java.version
+    }
+    tasks.withType(ScalaCompile) {
+        sourceCompatibility = hs.java.version
+        targetCompatibility = hs.java.version
+    }
+}
+
+project(':util') {
+    dependencies {
+        implementation 'com.github.hyperskill:hs-test:release-SNAPSHOT'
+    }
+}
+
+configure(subprojects.findAll {it.name != 'util'}) {
+    dependencies {
+        testImplementation project(':util').sourceSets.main.output
+        testImplementation project(':util').sourceSets.test.output
+    }
+}
+
+wrapper {
+    gradleVersion = hs.gradle.version
+}
